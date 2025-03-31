@@ -33,7 +33,7 @@ def main():
         url = event["issue"]["html_url"]
         issue_number = event["issue"]["number"]
         msg_title = "📢 새로운 이슈가 등록되었습니다!"
-        msg_body = (f"🔗 [{title}]({url}) (#{issue_number})"
+        msg_body = (f"🔗 **{title}** ([#{issue_number}]({url}))"
                     f"\n👤 **담당자:** {assignees}"
                     f"\n🕒 **등록 시간:** {format_datetime(dt)}"
                     f"\n📌 확인 부탁드립니다!")
