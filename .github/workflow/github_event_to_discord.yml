@@ -34,4 +34,4 @@ jobs:
           MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
           GITHUB_EVENT_PATH: ${{ github.event_path }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
-        run: python .github/scripts/notify_discord.py
+        run: python .github/scripts/send_discord_notification.py
