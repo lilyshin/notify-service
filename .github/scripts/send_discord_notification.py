@@ -13,7 +13,7 @@ GITHUB_EVENT_NAME = os.getenv("GITHUB_EVENT_NAME")
 # Notion API 헤더
 notion_headers = {
     "Authorization": f"Bearer {NOTION_TOKEN}",
-    "Notion-Version": "2023-09-07",
+    "Notion-Version": "2022-06-28",  # 수정된 버전
     "Content-Type": "application/json"
 }
 
@@ -24,21 +24,25 @@ def main():
     github_id = event.get("sender", {}).get("login")
     discord_id = get_discord_id(github_id)
     assignees = f"<@{discord_id}>" if discord_id else github_id
-    dt = datetime.fromisoformat(datetime.isoformat().replace('Z', '+00:00'))
-    now = dt.strftime("%Y.%m.%d %p %I:%M").replace("AM", "오전").replace("PM", "오후")
 
     if GITHUB_EVENT_NAME == "issues":
+        created_at_str = event["issue"]["created_at"]
+        dt = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+
         title = event["issue"]["title"]
         url = event["issue"]["html_url"]
         issue_number = event["issue"]["number"]
         msg_title = "📢 새로운 이슈가 등록되었습니다!"
         msg_body = (f"🔗 [{title}]({url}) (#{issue_number})"
                     f"\n👤 담당자: {assignees}"
-                    f"\n🕒 등록 시간: {now}"
+                    f"\n🕒 등록 시간: {format_datetime(dt)}"
                     f"\n📌 확인 부탁드립니다!")
         send_discord_embed(msg_title, msg_body)
 
     elif GITHUB_EVENT_NAME == "pull_request" and event.get("action") == "opened":
+        created_at_str = event["pull_request"]["created_at"]
+        dt = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+
         pr = event["pull_request"]
         title = pr["title"]
         url = pr["html_url"]
@@ -46,11 +50,14 @@ def main():
         formatted_reviewer = ", ".join([f"<@{r}>" if r.startswith("1") else r for r in reviewers]) or "없음"
         msg_title = f"🚀 {assignees}님이 새로운 PR을 생성했습니다!"
         msg_body = (f"👀 리뷰어: {formatted_reviewer}"
-                    f"\n🕒 등록 시간: {now}"
+                    f"\n🕒 등록 시간: {format_datetime(dt)}"
                     f"\n💡 [PR 보러 가기]({url})")
         send_discord_embed(msg_title, msg_body)
 
     elif GITHUB_EVENT_NAME == "pull_request_review":
+        submitted_at_str = event["review"]["submitted_at"]
+        dt = datetime.fromisoformat(submitted_at_str.replace("Z", "+00:00"))
+
         pr = event["pull_request"]
         title = pr["title"]
         url = pr["html_url"]
@@ -60,13 +67,16 @@ def main():
         msg_title = "✅ PR 리뷰가 완료되었습니다!"
         msg_body = (f"👤 담당자: {assignees}"
                     f"\n👀 리뷰어: {reviewers}"
-                    f"\n🕒 등록 시간: {now}"
+                    f"\n🕒 등록 시간: {format_datetime(dt)}"
                     f"\n🎉 [PR 보러 가기]({url}) 이제 머지를 고려해 주세요!")
         send_discord_embed(msg_title, msg_body)
 
     else:
         print(f"⚠️ Unknown Event: {GITHUB_EVENT_NAME}")
         return
+
+def format_datetime(dt):
+    return dt.strftime("%Y.%m.%d %p %I:%M").replace("AM", "오전").replace("PM", "오후")
 
 def get_discord_id(github_id):
     url = f"https://api.notion.com/v1/databases/{NOTION_DB_ID}/query"
